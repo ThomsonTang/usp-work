@@ -50,12 +50,16 @@ public class ClusterService {
 
     private void beUsedCluster(BufferedWriter writer, String serviceName) {
         List<ClusterDO> clusters = clusterRepository.findByType(1);
-        for (ClusterDO cluster : clusters) {
-            if (cluster.getName().endsWith(serviceName)) {
-                LOGGER.info("the service {} is in usp.", serviceName);
-                writeUsedCluster(writer, cluster);
-            }
-        }
+        clusters.stream()
+                .filter(cluster -> cluster.getName().endsWith(serviceName))
+                .forEach( cluster -> writeUsedCluster(writer, cluster));
+
+//        for (ClusterDO cluster : clusters) {
+//            if (cluster.getName().endsWith(serviceName)) {
+//                LOGGER.info("the service {} is in usp.", serviceName);
+//                writeUsedCluster(writer, cluster);
+//            }
+//        }
     }
 
     private void writeUsedCluster(BufferedWriter writer, ClusterDO cluster) {
