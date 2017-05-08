@@ -1,6 +1,6 @@
 package com.thomson.work.usp;
 
-import com.thomson.work.usp.service.ClusterService;
+import com.thomson.work.usp.service.CmdbClusterService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ public class UspWorkApplication {
 
     public static void main(String[] args) {
         ConfigurableApplicationContext applicationContext = SpringApplication.run(UspWorkApplication.class, args);
-        ClusterService clusterService = applicationContext.getBean(ClusterService.class);
+        CmdbClusterService clusterService = applicationContext.getBean(CmdbClusterService.class);
         LOGGER.info("start to resolve the clusters which were be used in usp...");
         clusterService.resolveBeUsedClusters();
         LOGGER.info("resolve completed!");

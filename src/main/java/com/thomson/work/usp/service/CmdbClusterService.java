@@ -1,7 +1,8 @@
 package com.thomson.work.usp.service;
 
-import com.thomson.work.usp.entity.ClusterDO;
-import com.thomson.work.usp.repo.ClusterRepository;
+import com.thomson.work.usp.entity.BusinessLineDO;
+import com.thomson.work.usp.entity.CmdbClusterDO;
+import com.thomson.work.usp.repo.BusinessLineRepository;
 import com.thomson.work.usp.repo.CmdbClusterRepository;
 
 import org.slf4j.Logger;
@@ -25,25 +26,24 @@ import java.util.stream.Stream;
  * @version Created: 10/04/2017.
  */
 @Service
-public class ClusterService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClusterService.class);
-    private static final String FC_SERVICE_IN_USP_FILE_PATH = "/opt/temp/fc-service-in-usp.txt";
-    private static final String ZP_SERVICE_IN_USP_FILE_PATH = "/opt/temp/zp-service-in-usp.txt";
-
-    @Autowired
-    private ClusterRepository clusterRepository;
+public class CmdbClusterService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CmdbClusterService.class);
+    private static final String SERVICE_IN_CMDB_FILE_PATH = "/opt/temp/common-service-in-cmdb.txt";
 
     @Autowired
     private CmdbClusterRepository cmdbClusterRepository;
 
     @Autowired
+    private BusinessLineRepository businessLineRepository;
+
+    @Autowired
     private ResourceLoader resourceLoader;
 
     public void resolveBeUsedClusters() {
-        Resource resource = resourceLoader.getResource("classpath:zp-service-name.txt");
+        Resource resource = resourceLoader.getResource("classpath:service-name.txt");
         try {
             LOGGER.info("get stream from the URI {}", resource.getURI());
-            BufferedWriter writer = Files.newBufferedWriter(Paths.get(ZP_SERVICE_IN_USP_FILE_PATH));
+            BufferedWriter writer = Files.newBufferedWriter(Paths.get(SERVICE_IN_CMDB_FILE_PATH));
             Stream<String> serviceNameStream = Files.lines(Paths.get(resource.getURI()));
             serviceNameStream.forEach((serviceName) -> beUsedCluster(writer, serviceName));
             writer.close();
@@ -54,9 +54,9 @@ public class ClusterService {
     }
 
     private void beUsedCluster(BufferedWriter writer, String serviceName) {
-        List<ClusterDO> clusters = clusterRepository.findByType(1);
-        clusters.stream()
-                .filter(cluster -> cluster.getName().endsWith("_" + serviceName))
+        List<CmdbClusterDO> all = cmdbClusterRepository.findAll();
+        all.stream()
+                .filter(cluster -> cluster.getClusterName().endsWith("scf_" + serviceName))
                 .forEach(cluster -> writeUsedCluster(writer, cluster));
 
 //        for (ClusterDO cluster : clusters) {
@@ -67,10 +67,15 @@ public class ClusterService {
 //        }
     }
 
-    private void writeUsedCluster(BufferedWriter writer, ClusterDO cluster) {
+    private void writeUsedCluster(BufferedWriter writer, CmdbClusterDO cluster) {
         try {
+            BusinessLineDO businessLine = businessLineRepository.findByBusinessLineId(cluster.getBusinessId());
+            if (null != businessLine) {
+                cluster.setBusinessLineCode(businessLine.getBusinessCode());
+                cluster.setBusinessLineName(businessLine.getBusinessName());
+            }
             writer.write(cluster.toString());
-            LOGGER.info("write the cluster {} to file successfully!", cluster.getName());
+            LOGGER.info("write the cluster {} to file successfully!", cluster.getClusterName());
         } catch (IOException e) {
             LOGGER.error("write to the file error: {}", e);
         }
